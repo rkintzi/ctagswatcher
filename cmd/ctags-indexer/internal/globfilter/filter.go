@@ -1,7 +1,5 @@
 package globfilter
 
-import "path/filepath"
-
 type Action bool
 
 const (
@@ -26,7 +24,7 @@ func New(act Action) *F {
 func (f *F) Append(act Action, patterns ...string) error {
 	rules := make([]rule, len(patterns))
 	for i, pat := range patterns {
-		_, err := filepath.Match(pat, "")
+		_, err := Match(pat, "")
 		if err != nil {
 			return err
 		}
@@ -39,7 +37,7 @@ func (f *F) Append(act Action, patterns ...string) error {
 
 func (f *F) Filter(path string) bool {
 	for _, rule := range f.rules {
-		if r, _ := filepath.Match(rule.pat, path); r {
+		if r, _ := Match(rule.pat, path); r {
 			return bool(rule.act)
 		}
 	}
