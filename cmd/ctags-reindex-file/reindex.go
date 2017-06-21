@@ -54,6 +54,10 @@ func main() {
 	if err != nil {
 		abort("Can not seek in tags file: %v", err)
 	}
+	err = tagsfile.Truncate(0)
+	if err != nil {
+		abort("Can not truncate tags file: %v", err)
+	}
 	_, err = io.Copy(tagsfile, tmpFile)
 	if err != nil {
 		abort("Can not copy file: %v", err)
