@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 
@@ -19,14 +21,15 @@ func abort(format string, args ...interface{}) {
 }
 
 func main() {
+	tagsfilename := os.Args[1]
 	filename := os.Args[2]
-	newFile, err := os.OpenFile(os.Args[3], os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	tmpFile, err := ioutil.TempFile("", "catgs-reindex-file")
 	if err != nil {
-		abort("Can not open file '%s': %v", os.Args[3])
+		abort("Can not open temporary file: %v", err)
 	}
-	oldFile, err := os.Open(os.Args[1])
+	tagsfile, err := os.OpenFile(tagsfilename, os.O_RDWR, 0666)
 	if err != nil {
-		abort("Can not open file '%s': %v", os.Args[1])
+		abort("Can not open file '%s': %v", tagsfilename)
 	}
 	cmd = exec.Command("ctags", "-f", "-", filename)
 	cmdPipe, err := cmd.StdoutPipe()
@@ -37,9 +40,28 @@ func main() {
 	if err != nil {
 		abort("Can not start ctags: %v", err)
 	}
-	err = ctags.MergeTags(newFile, ctags.NewFilenameFilter(oldFile, filename), cmdPipe)
+	err = ctags.MergeTags(tmpFile, ctags.NewFilenameFilter(tagsfile, filename), cmdPipe)
 	if err != nil {
 		abort("Can not merge tags: %v", err)
 	}
 	cmd.Wait()
+
+	_, err = tmpFile.Seek(0, os.SEEK_SET)
+	if err != nil {
+		abort("Can not seek in tempemporary file: %v", err)
+	}
+	_, err = tagsfile.Seek(0, os.SEEK_SET)
+	if err != nil {
+		abort("Can not seek in tags file: %v", err)
+	}
+	_, err = io.Copy(tagsfile, tmpFile)
+	if err != nil {
+		abort("Can not copy file: %v", err)
+	}
+	tagsfile.Close()
+	tmpFile.Close()
+	err = os.Remove(tmpFile.Name())
+	if err != nil {
+		abort("Can not remove temporary file: %v", err)
+	}
 }
