@@ -20,7 +20,7 @@ type tagline struct {
 }
 
 func (l *tagline) IsEmpty() bool    { return len(l.line) == 0 }
-func (l *tagline) IsComment() bool  { return l.line[0] != '!' }
+func (l *tagline) IsComment() bool  { return l.line[0] == '!' }
 func (l *tagline) Tag() []byte      { return l.line[0:l.ti] }
 func (l *tagline) Filename() []byte { return l.line[l.ti+1 : l.fi] }
 func (l *tagline) Bytes() []byte    { return l.line }
@@ -41,7 +41,7 @@ func (s *scanner) Scan() bool {
 		return false
 	}
 	s.tl.ti = bytes.Index(s.tl.line, []byte("\t"))
-	s.tl.fi = bytes.Index(s.tl.line[s.tl.ti+1:], []byte("\t"))
+	s.tl.fi = bytes.Index(s.tl.line[s.tl.ti+1:], []byte("\t")) + s.tl.ti + 1
 	return true
 }
 func (s *scanner) Err() error {
@@ -82,10 +82,8 @@ func cmpTags(l, r *tagline) int {
 		return -1
 	} else if r.IsComment() {
 		return 1
-	} else if res := bytes.Compare(l.Tag(), r.Tag()); res == 0 {
-		return bytes.Compare(l.Filename(), r.Filename())
 	} else {
-		return res
+		return bytes.Compare(l.Bytes(), r.Bytes())
 	}
 }
 
