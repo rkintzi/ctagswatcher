@@ -16,6 +16,7 @@ type ProjectConf struct {
 	Dirs     []string
 	Exclude  []string
 	CtagArgs string
+	Tags     string
 }
 
 func ReadConfig(files ...string) (*Config, error) {
