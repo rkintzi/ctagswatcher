@@ -19,7 +19,6 @@ func CtagsMaps() (exts []string, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't start process for command ctags --list-maps: %v", err)
 	}
-	var exts []string
 	r := bufio.NewReader(cmdPipe)
 	for lineb, err := r.ReadBytes('\n'); err == nil || err == io.EOF; lineb, err = r.ReadBytes('\n') {
 		line := string(lineb)
@@ -36,7 +35,7 @@ func CtagsMaps() (exts []string, err error) {
 		return nil, fmt.Errorf("can't read from process: %v", err)
 	}
 	err = cmd.Wait()
-	if err != io.EOF {
+	if err != nil {
 		return nil, fmt.Errorf("can't wait for process: %v", err)
 	}
 	return

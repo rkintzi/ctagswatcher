@@ -1,29 +1,16 @@
 package ctags
 
 import (
-	"bufio"
 	"bytes"
 	"io"
 )
 
 type scanner struct {
-	r   *bufio.Reader
+	r   Reader
 	err error
 	eof bool
-	tl  tagline
+	tl  *TagLine
 }
-
-type tagline struct {
-	line []byte
-	ti   int
-	fi   int
-}
-
-func (l *tagline) IsEmpty() bool    { return len(l.line) == 0 }
-func (l *tagline) IsComment() bool  { return l.line[0] == '!' }
-func (l *tagline) Tag() []byte      { return l.line[0:l.ti] }
-func (l *tagline) Filename() []byte { return l.line[l.ti+1 : l.fi] }
-func (l *tagline) Bytes() []byte    { return l.line }
 
 func (s *scanner) Scan() bool {
 	if s.eof {
@@ -33,22 +20,20 @@ func (s *scanner) Scan() bool {
 		return false
 	}
 	var err error
-	s.tl.line, err = s.r.ReadBytes('\n')
-	if err == io.EOF && len(s.tl.line) > 0 {
+	s.tl, err = s.r.ReadTag()
+	if err == io.EOF && !s.tl.IsEmpty() {
 		s.eof = true
 	} else if err != nil {
 		s.err = err
 		return false
 	}
-	s.tl.ti = bytes.Index(s.tl.line, []byte("\t"))
-	s.tl.fi = bytes.Index(s.tl.line[s.tl.ti+1:], []byte("\t")) + s.tl.ti + 1
 	return true
 }
 func (s *scanner) Err() error {
 	return s.err
 }
-func (s *scanner) Tagline() *tagline {
-	return &s.tl
+func (s *scanner) Tagline() *TagLine {
+	return s.tl
 }
 
 func skipHeader(s *scanner) error {
@@ -73,7 +58,7 @@ func copyHeader(w io.Writer, s *scanner) error {
 	return s.Err()
 }
 
-func cmpTags(l, r *tagline) int {
+func cmpTags(l, r *TagLine) int {
 	if l.IsEmpty() {
 		return -1
 	} else if r.IsEmpty() {
@@ -87,10 +72,10 @@ func cmpTags(l, r *tagline) int {
 	}
 }
 
-func MergeTags(w io.Writer, rs ...io.Reader) error {
+func MergeTags(w io.Writer, rs ...Reader) error {
 	scanners := make([]scanner, len(rs))
 	for i, r := range rs {
-		scanners[i].r = bufio.NewReader(r)
+		scanners[i].r = r
 		if i == 0 {
 			err := copyHeader(w, &scanners[i])
 			if err != nil && err != io.EOF {
@@ -103,9 +88,9 @@ func MergeTags(w io.Writer, rs ...io.Reader) error {
 			}
 		}
 	}
-	var previous tagline
+	var previous TagLine
 	for {
-		var min tagline
+		var min TagLine
 		var selected = -1
 		for i := range scanners {
 			s := &scanners[i]
