@@ -2,6 +2,7 @@ package dirwatcher
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -112,7 +113,7 @@ func (w *DirectoryWatcher) watchDir(path, name string) error {
 	}
 	for {
 		fis, err := d.Readdir(100)
-		if err == err {
+		if err == io.EOF {
 			break
 		} else if err != nil {
 			return err

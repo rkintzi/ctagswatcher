@@ -14,16 +14,16 @@ type rule struct {
 	act Action
 }
 
-type Filter struct {
+type F struct {
 	rules []rule
 	act   Action
 }
 
-func NewFilter(act Action) *Filter {
-	return &Filter{act: act}
+func New(act Action) *F {
+	return &F{act: act}
 }
 
-func (f *Filter) Append(act Action, patterns ...string) error {
+func (f *F) Append(act Action, patterns ...string) error {
 	rules := make([]rule, len(patterns))
 	for i, pat := range patterns {
 		_, err := filepath.Match(pat, "")
@@ -37,7 +37,7 @@ func (f *Filter) Append(act Action, patterns ...string) error {
 	return nil
 }
 
-func (f *Filter) Filter(path string) bool {
+func (f *F) Filter(path string) bool {
 	for _, rule := range f.rules {
 		if r, _ := filepath.Match(rule.pat, path); r {
 			return bool(rule.act)

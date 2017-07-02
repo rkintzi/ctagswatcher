@@ -1,9 +1,6 @@
 package ctags
 
-import (
-	"bytes"
-	"io"
-)
+import "bytes"
 
 func filenamePred(filenames []string) Predicate {
 	names := make([][]byte, len(filenames))
@@ -38,6 +35,6 @@ func (f *filter) ReadTag() (*TagLine, error) {
 	}
 }
 
-func NewFilenameFilter(r io.Reader, filenames ...string) Reader {
-	return &filter{r: NewReader(r), p: filenamePred(filenames)}
+func NewFilenameFilter(r Reader, filenames ...string) Reader {
+	return &filter{r: r, p: filenamePred(filenames)}
 }
