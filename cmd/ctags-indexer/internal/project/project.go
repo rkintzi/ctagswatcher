@@ -28,6 +28,7 @@ type Project struct {
 
 func New(c *cfg.ProjectConf, q *taskqueue.Q, exts []string) *Project {
 	f := globfilter.New(globfilter.Deny)
+	f.Append(globfilter.Deny, c.Exclude...)
 	f.Append(globfilter.Allow, exts...)
 	p := &Project{
 		c:      c,
@@ -48,6 +49,7 @@ func (p *Project) Start() (err error) {
 		return
 	}
 	since = fi.ModTime()
+	go p.debounce()
 	for i, d := range p.c.Dirs {
 		d = filepath.Join(p.c.Root, d)
 		p.dws[i] = dirwatcher.NewDirectoryWatcher(d, p.events, p.errors, since, filter)
@@ -56,7 +58,6 @@ func (p *Project) Start() (err error) {
 			return
 		}
 	}
-	go p.debounce()
 	return
 }
 
